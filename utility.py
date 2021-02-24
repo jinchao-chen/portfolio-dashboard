@@ -104,7 +104,7 @@ def plot_transactions(subset, ts):
                 "Time",
                 axis=alt.Axis(
                     format="%y/%m/%d",
-                    labelAngle=-45,
+                    labelAngle=0,
                     #               title='Date'
                 ),
             ),
@@ -152,7 +152,7 @@ def plot_transactions_2(subset, ts):
                 "date:T",
                 axis=alt.Axis(
                     format="%y/%m/%d",
-                    labelAngle=-45,
+                    labelAngle=0,
                     #               title='Date'
                 ),
             ),

@@ -11,7 +11,7 @@ import sys
 alt.renderers.enable("default")
 pn.extension("vega")
 
-fln = "trasaction_history_18022021.csv"
+fln = "dummy_transactions.csv"
 transactions = read_transactions(fln)
 
 # hide
