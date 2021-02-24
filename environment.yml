@@ -4,11 +4,8 @@ channels:
 dependencies:
   - conda
   - python=3.8
-  - python.app
-  - jupyterlab=3
   - pandas
   - seaborn
-  - jupyterlab_code_formatter
   - isort
   - black
   - altair
