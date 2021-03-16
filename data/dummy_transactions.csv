@@ -1,0 +1,6 @@
+Action;Time;ISIN;Ticker;Name;No. of shares;Price / share;Currency (Price / share);Exchange rate;Result (EUR);Total (EUR);Withholding tax;Currency (Withholding tax);Charge amount (EUR);Stamp duty (EUR);Transaction fee (EUR);Finra fee (EUR);Notes;ID;French transaction tax
+Limit buy;01/05/2020 18:52;US2546871060;DIS;Walt Disney;11979.0;104.9;USD;1.09773;;860.03;;;;;;;;EOF196699592;
+Market sell;10/11/2020 18:59;US2546871060;DIS;Walt Disney;11979.0;140.85;USD;1.18211;212.32;1072.36;;;;;;;;EOF540974012;
+Market buy;25/01/2021 15:14;US2546871060;DIS;Walt Disney;1331.0;171.42;USD;1.21184;;141.45;;;;;;;;EOF886283195;
+Market buy;26/01/2021 14:39;US2546871060;DIS;Walt Disney;1331.0;172.33;USD;1.21567;;141.76;;;;;;;;EOF894597615;
+Market sell;01/02/2021 17:01;US2546871060;DIS;Walt Disney;2662.0;170.43;USD;1.20701;-0.81;282.4;;;;;;;;EOF950106077;
