@@ -86,65 +86,67 @@ def calculate_return(group):
 
     return group
 
+def data_preprocessing(fln):
+    """import and clean transaction data"""
+    tr = read_transactions(fln)
 
-"""import and clean transaction data"""
-fln = "../data/trasaction_history_18022021.csv"
-tr = read_transactions(fln)
+    # keep only the most relavent columns
+    col_to_keep = ['Action', 'Time', 'Ticker', 'No. of shares', 'Price / share', 'Exchange rate',
+                'Result (EUR)']
+    tr = tr[col_to_keep]
+    tr.loc[tr['Action'].str.contains("buy"), 'Action'] = 'buy'
+    tr.loc[tr['Action'].str.contains("sell"), 'Action'] = 'sell'
+    # tr_pivoted = tr.pivot_table(index=['Ticker', 'Time'],
+    #                             columns='action', values='No. of shares', dropna=False)
 
-# keep only the most relavent columns
-col_to_keep = ['Action', 'Time', 'Ticker', 'No. of shares', 'Price / share', 'Exchange rate',
-               'Result (EUR)']
-tr = tr[col_to_keep]
-tr.loc[tr['Action'].str.contains("buy"), 'Action'] = 'buy'
-tr.loc[tr['Action'].str.contains("sell"), 'Action'] = 'sell'
-# tr_pivoted = tr.pivot_table(index=['Ticker', 'Time'],
-#                             columns='action', values='No. of shares', dropna=False)
+    tr = tr.loc[tr['Action'].isin(['buy', 'sell'])]
+    grouped = tr.groupby(by='Ticker')
 
-tr = tr.loc[tr['Action'].isin(['buy', 'sell'])]
-grouped = tr.groupby(by='Ticker')
+    # feature engineering
+    groups = []
 
-# feature engineering
-groups = []
+    for name, group in grouped:
+        group.reset_index(inplace=True, drop=True)
+        group = calculate_return(group)
+        groups.append(group)
 
-for name, group in grouped:
-    group.reset_index(inplace=True, drop=True)
-    group = calculate_return(group)
-    groups.append(group)
+    tr = pd.concat(groups).reset_index(drop=True)
 
-tr = pd.concat(groups).reset_index(drop=True)
+    """request time history from yahoo finance"""
 
-"""request time history from yahoo finance"""
+    # download the ts
+    tickers = tr.Ticker.dropna().unique()
+    tickers = tickers.tolist()
+    start = tr.Time.min()
+    end = tr.Time.max() + timedelta(1)
+    data = yf.download(tickers, start, end)
 
-# download the ts
-tickers = tr.Ticker.dropna().unique()
-tickers = tickers.tolist()
-start = tr.Time.min()
-end = tr.Time.max() + timedelta(1)
-data = yf.download(tickers, start, end)
+    #  identify tickers not downloaded
+    ts_tickers = data.columns.droplevel(0).values
+    mask = data['Adj Close'].isna().mean() == 1.0
+    tickers_to_drop = mask.loc[mask].keys().values
 
-#  identify tickers not downloaded
-ts_tickers = data.columns.droplevel(0).values
-mask = data['Adj Close'].isna().mean() == 1.0
-tickers_to_drop = mask.loc[mask].keys().values
+    # loop it through for all the tickers:
+    # loop it through for all the tickers:
+    dfs = []
+    groups = tr.groupby(by='Ticker')
+    ts_tickers = data.columns.droplevel(0).values
 
-# loop it through for all the tickers:
-# loop it through for all the tickers:
-dfs = []
-groups = tr.groupby(by='Ticker')
-ts_tickers = data.columns.droplevel(0).values
+    for ticker in tickers:
+        if ticker not in tickers_to_drop:
+            # share_no_history(tr_pivoted,ticker)
+            tr_sub = groups.get_group(
+            ticker).copy()[['Time', 'Ticker', 'Action', 'No. of shares', 'cum_shares', 'cum_total_eur', 'profit_eur']]
+            tr_sub['Time']=tr_sub["Time"].dt.floor("d")
+            tts_sub = ticker_price_history(data, ticker)
+            df = merge_histories(tr_sub, tts_sub, ticker)
 
-for ticker in tickers:
-    if ticker not in tickers_to_drop:
-        # share_no_history(tr_pivoted,ticker)
-        tr_sub = groups.get_group(
-            ticker)[['Time', 'Ticker', 'cum_shares', 'cum_total_eur', 'profit_eur']]
-        tts_sub = ticker_price_history(data, ticker)
-        df = merge_histories(tr_sub, tts_sub, ticker)
+            dfs.append(df)
+        else:
+            print(f'{ticker} not in the database')
 
-        dfs.append(df)
-    else:
-        print(f'{ticker} not in the database')
+    df_combined = pd.concat(dfs)
+    df_combined = df_combined.drop_duplicates(
+        subset=['time_ts', 'ticker'], keep='last', inplace=False, ignore_index=False)
 
-df_combined = pd.concat(dfs)
-df_combined = df_combined.drop_duplicates(
-    subset=['time_ts', 'ticker'], keep='last', inplace=False, ignore_index=False)
+    return df_combined, tr, start, end, data
