@@ -8,7 +8,7 @@ import yfinance as yf
 from altair import datum
 
 
-def action_dirction(action):
+def action_direction(action):
     """To simplify the modelling, I wont't differentiate 'market sell/buy' or  'limit sell/buy'
 
     Args:
@@ -41,8 +41,8 @@ def read_transactions(fln):
         fln, delimiter=";", parse_dates=["Time"], date_parser=dateparse
     )
     transactions["textof"] = "➟"
-    transactions["Time"] = transactions["Time"].dt.floor("d")
-    transactions["action"] = transactions["Action"].apply(lambda x: action_dirction(x))
+    # transactions["Time"] = transactions["Time"].dt.floor("d")
+    transactions["action"] = transactions["Action"].apply(lambda x: action_direction(x))
 
     return transactions
 
@@ -85,8 +85,7 @@ def plot_transactions(subset, ts):
                 "date:T", axis=alt.Axis(format="%y/%m/%d", labelAngle=-45, title="Date")
             ),
             color=open_close_color,
-        )
-        #         .properties(width=500, height=300)
+        ).properties(width=400, height=300)
     )
 
     rule = base.mark_rule().encode(
@@ -157,7 +156,7 @@ def plot_transactions_2(subset, ts):
                 ),
             ),
             y="close:Q",
-        )
+        ).properties(width=400, height=300)
     )
 
     # Transparent selectors across the chart. This is what tells us

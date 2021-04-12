@@ -1,19 +1,16 @@
+from datetime import date, datetime, timedelta
+
+import altair as alt
+import numpy as np
+import pandas as pd
+import panel as pn
 import plotly.express as px
 import plotly.graph_objs as go
-from datetime import date, timedelta
-from scr.utility import (
-    plot_transactions,
-    plot_transactions_2,
-    read_ticker_ts,
-    read_transactions,
-)
-from altair import datum
 import yfinance as yf
-import panel as pn
-import pandas as pd
-import numpy as np
-import altair as alt
-from datetime import datetime, timedelta
+from altair import datum
+
+from utility import (plot_transactions, plot_transactions_2, read_ticker_ts,
+                     read_transactions)
 
 
 def ticker_price_history(data, ticker):
@@ -33,8 +30,9 @@ def merge_histories(tr_sub, tts_sub, ticker):
     """
     merged = tts_sub.merge(right=tr_sub, left_on='time_ts',
                            right_on='Time', how="outer")
+    merged = merged.merge(df_forex, left_on = 'time_ts', right_on='date')
     merged['cum_shares'] = merged['cum_shares'].fillna(method='ffill')
-    merged['value'] = merged['close_price']*merged['cum_shares']
+    merged['value'] = merged['close_price']*merged['cum_shares']*merged['rate']
     merged['ticker'] = ticker
     merged['cum_total_eur'] = merged['cum_total_eur'].fillna(
         method='ffill')
@@ -86,13 +84,14 @@ def calculate_return(group):
 
     return group
 
+
 def data_preprocessing(fln):
     """import and clean transaction data"""
     tr = read_transactions(fln)
 
     # keep only the most relavent columns
     col_to_keep = ['Action', 'Time', 'Ticker', 'No. of shares', 'Price / share', 'Exchange rate',
-                'Result (EUR)']
+                   'Result (EUR)']
     tr = tr[col_to_keep]
     tr.loc[tr['Action'].str.contains("buy"), 'Action'] = 'buy'
     tr.loc[tr['Action'].str.contains("sell"), 'Action'] = 'sell'
@@ -136,8 +135,8 @@ def data_preprocessing(fln):
         if ticker not in tickers_to_drop:
             # share_no_history(tr_pivoted,ticker)
             tr_sub = groups.get_group(
-            ticker).copy()[['Time', 'Ticker', 'Action', 'No. of shares', 'cum_shares', 'cum_total_eur', 'profit_eur']]
-            tr_sub['Time']=tr_sub["Time"].dt.floor("d")
+                ticker).copy()[['Time', 'Ticker', 'Action', 'No. of shares', 'cum_shares', 'cum_total_eur', 'profit_eur']]
+            tr_sub['Time'] = tr_sub["Time"].dt.floor("d")
             tts_sub = ticker_price_history(data, ticker)
             df = merge_histories(tr_sub, tts_sub, ticker)
 
