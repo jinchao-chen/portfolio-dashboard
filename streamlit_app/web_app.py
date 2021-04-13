@@ -18,14 +18,14 @@ st.set_page_config(layout="wide")
 row0_1, row0_spacer2, row0_2, row0_spacer3 = st.beta_columns((2, 0.2, 1, 0.1))
 row0_1.title("A stock portfolio dashboard")
 st.markdown(
-    "This web application is created to visualize the personal transaction records on the trading platform [**Trading 212**](https://www.trading212.com). The charts in this dashboard are created to help you better understand your portfolio, while at the same time gain some insights into your personal investment style. To download transaction data from the trading platform, please refer to this [post](https://community.trading212.com/t/new-feature-export-your-investing-history/35612) for the instructions."
+    "This web application works to visualize the personal transactions executed on the trading platform [**Trading 212**](https://www.trading212.com). The charts are created to help you better understand your portfolio, and at the same time gain some insights into your personal investment style. To download transaction data from the trading platform, please refer to this [post](https://community.trading212.com/t/new-feature-export-your-investing-history/35612) for the instructions."
 )
 st.markdown(
     "**Disclaimer**: the uploaded file is not stored, nor shared. Should there be any concerns, it is advised to first review the [scripts](https://github.com/jinchao-chen/portfolio-dashboard) before running the app. Alternatively, you can set it up and execute this app locally on your own computer."
 )
 
 
-"""data pre-processing"""
+#"""data pre-processing"""
 
 uploaded_file = st.file_uploader("Please select a csv file to upload. ")
 if uploaded_file is not None:
@@ -75,12 +75,12 @@ with row1_1:
     st.write("")
     st.markdown(
         "Up to {:}, you've invested **{:,.1f}** EUR on this platform. The total profit amounts to **{:,.1f}** EUR: the realized profit is **{:,.1f}** EUR while the floating profit is **{:,.1f}** EUR".format(
-            end.strftime("%b %d, %Y"),
+            (end).strftime("%b %d, %Y"),
             last_row["invested amount"].values[0],
             last_row["floating profit"].values[0]
             + last_row["realized profit"].values[0],
-            last_row["floating profit"].values[0],
             last_row["realized profit"].values[0],
+            last_row["floating profit"].values[0],
         )
     )
     if last_row["realized profit"].values[0] > 0:
@@ -88,7 +88,7 @@ with row1_1:
     else:
         st.markdown("Not bad!")
     st.markdown(
-        "*current version include only US listed stock. Your actual profit/loss may vary, depending on your non-US listed stocks*"
+        "*note: profit and loss calculation includes only US listed stock. Your actual profit/loss may vary, depending on the portion of non-US listed*"
     )
 
 with row1_2:
@@ -97,7 +97,7 @@ with row1_2:
         & (df_combined["cum_shares"] > 0.25)
     ]
     df_ = df_.drop_duplicates(
-        subset=["time", "Ticker"], keep="last", inplace=False, ignore_index=False
+        subset=["time", "ticker"], keep="last", inplace=False, ignore_index=False
     )
 
     fig = px.pie(
@@ -150,6 +150,7 @@ with row2_1:
     buy_orders = mt.loc[mt["Action"] == "buy"].transactions.sum()
     sell_orders = mt.loc[mt["Action"] == "sell"].transactions.sum()
     most_frequent_month = mt.groupby(by="mnth_yr")["transactions"].sum().idxmax()
+    most_frequent_count = mt.groupby(by="mnth_yr")["transactions"].sum().max()
 
     def diff_month(d1, d2):
         return (d1.year - d2.year) * 12 + d1.month - d2.month
@@ -158,7 +159,7 @@ with row2_1:
     monthly_orders = total_orders / (diff_month + 1)
     # st.markdown('During the selected period, in total ')
     st.markdown(
-        f"Between {start_date:} and {end_date:}, you executed in total **{total_orders:0.0f}**: composed of {buy_orders:0.0f} buying orders and {sell_orders:0.0f} selling. In average, you sell and buy **{monthly_orders:0.1f}** times each month. **{most_frequent_month:}** is the month with the most frequent transactions."
+        f"Between {start_date:} and {end_date:}, you executed in total **{total_orders:0.0f}** orders: {buy_orders:0.0f} buying and {sell_orders:0.0f} selling orders. In average, you sell and buy **{monthly_orders:0.1f}** times each month. {most_frequent_month:} is the month with the most frequent transactions, reaching {most_frequent_count:} orders."
     )  #
 
 # fig_2-2 chart of distribution over the day and week
@@ -201,7 +202,7 @@ row3_space1, row3_1, row3_space2, row3_2, row3_space3 = st.beta_columns(
 with row3_1:
     retscomp = data["Adj Close"].pct_change()
     corr = retscomp.corr()
-    cols = df_.Ticker.dropna().unique()
+    cols = df_.ticker.dropna().unique()
     retscomp = data.loc[:, ("Adj Close", cols)].droplevel(0, axis=1)
     retscomp = retscomp.pct_change()
     corr = retscomp.corr()
@@ -221,6 +222,11 @@ with row3_1:
 
     st.plotly_chart(fig31)
 
+    most_correlated = corr.unstack().sort_values(ascending = False).drop_duplicates().index[1]
+# print(*most_correlated)
+    st.markdown('The correlation measures how the price of one stock moves in relation to the other. Knowing the correlation will help us understand whether the return of one stock is affected by other stocks. In the chart, the darker the color the more correlated are the two stocks, i.e. the pair is more likely to move in the same direction. In your portfolio, {:} and {:} is the most correlated pair.'.format(*most_correlated))
+    st.markdown('If you are interested in the technical background, please refer to this [post](https://towardsdatascience.com/in-12-minutes-stocks-analysis-with-pandas-and-scikit-learn-a8d8a7b50ee7)')
+
 with row3_2:
     fig32 = px.scatter(x=retscomp.mean(), y=retscomp.std(), text=cols)
     fig32.update_traces(textposition="top center")
@@ -231,3 +237,5 @@ with row3_2:
         yaxis_title="Risk",
     )
     st.plotly_chart(fig32)
+    max_ratio = (retscomp.mean()/retscomp.std()).index[0]
+    st.markdown('In this chart, the stocks are measured in two dimensions: return and risk. In your portfolio, {:} has the largest return and risk ratio. If interested in the technical details, please refer to this [post](https://towardsdatascience.com/in-12-minutes-stocks-analysis-with-pandas-and-scikit-learn-a8d8a7b50ee7).'.format(max_ratio))

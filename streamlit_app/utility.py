@@ -36,11 +36,11 @@ def read_transactions(fln):
     Returns:
         transaction (pd.Dataframe): 
     """
-    dateparse = lambda x: datetime.strptime(x, "%d/%m/%Y %H:%M")
+    # dateparse = lambda x: datetime.strptime(x, "%d/%m/%Y %H:%M")
     transactions = pd.read_csv(
-        fln, delimiter=";", parse_dates=["Time"], date_parser=dateparse
+        fln, parse_dates=["Time"]
     )
-    transactions["textof"] = "➟"
+    # transactions["textof"] = "➟"
     # transactions["Time"] = transactions["Time"].dt.floor("d")
     transactions["action"] = transactions["Action"].apply(lambda x: action_direction(x))
 
