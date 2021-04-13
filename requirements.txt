@@ -1,0 +1,7 @@
+panel==0.10.3
+numpy==1.19.2
+pandas==1.2.3
+plotly==4.14.3
+streamlit==0.78.0
+altair==4.1.0
+yfinance==0.1.59
