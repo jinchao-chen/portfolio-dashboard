@@ -35,7 +35,8 @@ else:
 
 df_combined, tr, start, end, data = data_preprocessing(fln)
 df_combined = df_combined.rename(
-    {"time_ts": "time", "value": "open position", "cum_total_eur": "invested amount",},
+    {"time_ts": "time", "value": "open position",
+        "cum_total_eur": "invested amount", },
     axis=1,
 )
 df_agg = df_combined.pivot_table(
@@ -58,7 +59,8 @@ with row1_1:
     fig = px.line(
         df_agg,
         x="time",
-        y=["open position", "invested amount", "floating profit", "realized profit"],
+        y=["open position", "invested amount",
+            "floating profit", "realized profit"],
         hover_data={"time": "|%B %d, %Y"},
         title="profit and loss",
     )
@@ -102,7 +104,8 @@ with row1_2:
     )
     st.plotly_chart(fig)
 
-    tickers_sorted = df_.sort_values(by="open position", ascending=False).ticker.values
+    tickers_sorted = df_.sort_values(
+        by="open position", ascending=False).ticker.values
     st.markdown(
         "**{:}** has the heaviest weight in your current portfolio, followed by {:} ".format(
             tickers_sorted[0], ", ".join(tickers_sorted[1:5])
@@ -146,7 +149,8 @@ with row2_1:
     total_orders = mt.transactions.sum()
     buy_orders = mt.loc[mt["Action"] == "buy"].transactions.sum()
     sell_orders = mt.loc[mt["Action"] == "sell"].transactions.sum()
-    most_frequent_month = mt.groupby(by="mnth_yr")["transactions"].sum().idxmax()
+    most_frequent_month = mt.groupby(
+        by="mnth_yr")["transactions"].sum().idxmax()
     most_frequent_count = mt.groupby(by="mnth_yr")["transactions"].sum().max()
 
     def diff_month(d1, d2):
@@ -169,16 +173,20 @@ with row2_2:
     fig = make_subplots(
         rows=1,
         cols=2,
-        subplot_titles=["distribution over the day", "distribution over the week"],
+        subplot_titles=["distribution over the day",
+                        "distribution over the week"],
     )
 
     m = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
-    fig.add_trace(go.Histogram(x=sorted(day_names, key=m.index),), row=1, col=1)
-    fig.update_xaxes(title_text="day of a week", row=1, col=1, tickformat="%H-%M-%S")
+    fig.add_trace(go.Histogram(
+        x=sorted(day_names, key=m.index),), row=1, col=1)
+    fig.update_xaxes(title_text="day of a week", row=1,
+                     col=1, tickformat="%H-%M-%S")
     fig.update_yaxes(title_text="counts", row=1, col=1)
 
     fig.add_trace(go.Histogram(x=sorted(hours),), row=1, col=2)
-    fig.update_xaxes(title_text="time of day", row=1, col=2, tickformat="%H:%M")
+    fig.update_xaxes(title_text="time of day", row=1,
+                     col=2, tickformat="%H:%M")
     fig.update_yaxes(title_text="counts", row=1, col=2)
 
     fig.update_layout(bargap=0.2)
@@ -219,10 +227,13 @@ with row3_1:
 
     st.plotly_chart(fig31)
 
-    most_correlated = corr.unstack().sort_values(ascending = False).drop_duplicates().index[1]
+    most_correlated = corr.unstack().sort_values(
+        ascending=False).drop_duplicates().index[1]
 # print(*most_correlated)
-    st.markdown('The correlation measures how the price of one stock moves in relation to the other. Knowing the correlation will help us understand whether the return of one stock is affected by other stocks. In the chart, the darker the color the more correlated are the two stocks, i.e. the pair is more likely to move in the same direction. In your portfolio, {:} and {:} is the most correlated pair.'.format(*most_correlated))
-    st.markdown('If you are interested in the technical background, please refer to this [post](https://towardsdatascience.com/in-12-minutes-stocks-analysis-with-pandas-and-scikit-learn-a8d8a7b50ee7)')
+    st.markdown('The correlation measures how the price of one stock moves in relation to the other. Knowing the correlation will help us understand whether the return of one stock is affected by other stocks. In the chart, the darker the color the more correlated are the two stocks, i.e. the pair is more likely to move in the same direction. In your portfolio, {:} and {:} is the most correlated pair.'.format(
+        *most_correlated))
+    st.markdown(
+        'If you are interested in the technical background, please refer to this [post](https://towardsdatascience.com/in-12-minutes-stocks-analysis-with-pandas-and-scikit-learn-a8d8a7b50ee7)')
 
 with row3_2:
     fig32 = px.scatter(x=retscomp.mean(), y=retscomp.std(), text=cols)
@@ -235,4 +246,5 @@ with row3_2:
     )
     st.plotly_chart(fig32)
     max_ratio = (retscomp.mean()/retscomp.std()).index[0]
-    st.markdown('In this chart, the stocks are measured in two dimensions: return and risk. In your portfolio, {:} has the largest return and risk ratio. If interested in the technical details, please refer to this [post](https://towardsdatascience.com/in-12-minutes-stocks-analysis-with-pandas-and-scikit-learn-a8d8a7b50ee7).'.format(max_ratio))
+    st.markdown(
+        'In this chart, the stocks are measured in two dimensions: return and risk. In your portfolio, {:} has the largest return and risk ratio. If interested in the technical details, please refer to this [post](https://towardsdatascience.com/in-12-minutes-stocks-analysis-with-pandas-and-scikit-learn-a8d8a7b50ee7).'.format(max_ratio))
