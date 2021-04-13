@@ -9,7 +9,7 @@ import plotly.graph_objs as go
 import yfinance as yf
 from altair import datum
 
-from utility import (
+from scr.utility import (
     plot_transactions,
     plot_transactions_2,
     read_ticker_ts,
