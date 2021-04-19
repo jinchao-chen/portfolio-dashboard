@@ -9,13 +9,7 @@ import plotly.graph_objs as go
 import yfinance as yf
 from altair import datum
 
-from scr.utility import (
-    plot_transactions,
-    plot_transactions_2,
-    read_ticker_ts,
-    read_transactions,
-)
-
+from scr.utility import read_ticker_ts, read_transactions
 
 def ticker_price_history(data, ticker):
     """filter time history of the specifed ticker, history of ticker close price """
@@ -45,10 +39,10 @@ def merge_histories(tr_sub, tts_sub, ticker, df_forex):
 
 
 def calculate_average_price(group):
-    """calculate the average price based on the invested value and floating number of shares"""
+    """calculate the average price based on the invested amount and number of shares"""
 
     # cumulative total in euro (buy price*share - average_price*sell)
-    group["cum_total_eur"] = group["invested_eur"].cumsum()
+    group["cum_total_eur"] = group["invested_amount_eur"].cumsum()
     group["ave_price_eur"] = group["cum_total_eur"] / group["cum_shares"]
 
     return group
@@ -64,19 +58,18 @@ def calculate_return(group):
     # determine the accumulated number of shares
     group.loc[mask_buy, "action_sign"] = 1
     group.loc[mask_sell, "action_sign"] = -1
-
     group["cum_shares"] = (group["No. of shares"] * group["action_sign"]).cumsum()
 
     # average price, treating all actions as buy
-    group["pps_eur"] = group["Price / share"] / group["Exchange rate"].astype(
+    group["pirce_per_share_eur"] = group["Price / share"] / group["Exchange rate"].astype(
         "float"
     )  # price per share in eur
-    group["invested_eur"] = group["No. of shares"] * group["pps_eur"]
+    group["invested_amount_eur"] = group["No. of shares"] * group["pirce_per_share_eur"]
     group = calculate_average_price(group)
 
     # update the ave_price whenever a sell event occurs
     for idx, row in group[mask_sell].iterrows():
-        group.loc[idx, "invested_eur"] = (
+        group.loc[idx, "invested_amount_eur"] = (
             -group.loc[idx, "No. of shares"] * group.loc[idx - 1, "ave_price_eur"]
         )
         group.loc[idx, "ave_price_eur"] = group.loc[idx - 1, "ave_price_eur"]
@@ -84,49 +77,31 @@ def calculate_return(group):
 
     # determine the return for each sell event
     group.loc[mask_sell, "profit_eur"] = (
-        group.loc[mask_sell, "pps_eur"] * group.loc[mask_sell, "No. of shares"]
-        + group.loc[mask_sell, "invested_eur"]
+        group.loc[mask_sell, "pirce_per_share_eur"] * group.loc[mask_sell, "No. of shares"]
+        + group.loc[mask_sell, "invested_amount_eur"]
     )
 
     return group
 
-
-def data_preprocessing(fln):
-    """import and clean transaction data"""
-    tr = read_transactions(fln)
-
-    # keep only the most relavent columns
-    col_to_keep = [
-        "Action",
-        "Time",
-        "Ticker",
-        "No. of shares",
-        "Price / share",
-        "Exchange rate",
-        "Result (EUR)",
-    ]
-    tr = tr[col_to_keep]
-    tr.loc[tr["Action"].str.contains("buy"), "Action"] = "buy"
-    tr.loc[tr["Action"].str.contains("sell"), "Action"] = "sell"
-    # tr_pivoted = tr.pivot_table(index=['Ticker', 'Time'],
-    #                             columns='action', values='No. of shares', dropna=False)
-
-    tr = tr.loc[tr["Action"].isin(["buy", "sell"])]
-    grouped = tr.groupby(by="Ticker")
-
-    # feature engineering
+def feature_engineering(tr): 
+    # feature engineering, calcuate return for each ticker
+    tr_grouped = tr.groupby(by="Ticker")
     groups = []
 
-    for name, group in grouped:
+    for name, group in tr_grouped:
         group.reset_index(inplace=True, drop=True)
         group = calculate_return(group)
         groups.append(group)
 
     tr = pd.concat(groups).reset_index(drop=True)
+    
+    return tr
 
-    """request time history from yahoo finance"""
-
-    # download the ts for the tickers
+def data_preprocessing(fln):
+    # import and clean transaction data
+    tr = read_transactions(fln)
+    tr = feature_engineering(tr)
+    # download the ts for the tickers from yahoo finance
     tickers = tr.Ticker.dropna().unique()
     tickers = tickers.tolist()
     start = tr.Time.min()
@@ -176,3 +151,7 @@ def data_preprocessing(fln):
     )
 
     return df_combined, tr, start, end, data
+
+if __name__ =='__main__':
+    data_preprocessing("./data/dummy_transactions.csv")
+    print('voila')

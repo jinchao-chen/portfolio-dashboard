@@ -24,7 +24,6 @@ st.markdown(
     "**Disclaimer**: the uploaded file is not stored, nor shared. Should there be any concerns, it is advised to first review the [scripts](https://github.com/jinchao-chen/portfolio-dashboard) before running the app. Alternatively, you can set it up and execute this app locally on your own computer."
 )
 
-
 #"""data pre-processing"""
 
 uploaded_file = st.file_uploader("Please select a csv file to upload. ")

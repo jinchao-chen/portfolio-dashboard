@@ -8,7 +8,7 @@ import yfinance as yf
 from altair import datum
 
 
-def action_direction(action):
+def _action_direction(action):
     """To simplify the modelling, I wont't differentiate 'market sell/buy' or  'limit sell/buy'
 
     Args:
@@ -34,17 +34,30 @@ def read_transactions(fln):
         fln (str): csv file name 
 
     Returns:
-        transaction (pd.Dataframe): 
+        tr (pd.Dataframe): 
     """
-    # dateparse = lambda x: datetime.strptime(x, "%d/%m/%Y %H:%M")
-    transactions = pd.read_csv(
+    tr = pd.read_csv(
         fln, parse_dates=["Time"]
     )
-    # transactions["textof"] = "➟"
-    # transactions["Time"] = transactions["Time"].dt.floor("d")
-    transactions["action"] = transactions["Action"].apply(lambda x: action_direction(x))
 
-    return transactions
+    # keep only the most relevant columns
+    col_to_keep = [
+        "Action",
+        "Time",
+        "Ticker",
+        "No. of shares",
+        "Price / share",
+        "Exchange rate",
+        "Result (EUR)",
+    ]
+    tr = tr[col_to_keep]
+    tr.loc[tr["Action"].str.contains("buy"), "Action"] = "buy"
+    tr.loc[tr["Action"].str.contains("sell"), "Action"] = "sell"
+
+    # drop reocords for deposing money or withdrawing money
+    tr = tr.loc[tr["Action"].isin(["buy", "sell"])]
+
+    return tr
 
 def read_ticker_ts(ticker, start, end):
     """Read the trading history through yfinance API, for the specified ticker. Note that the time history is provided for timezone (GMT)
